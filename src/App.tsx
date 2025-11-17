@@ -19,13 +19,27 @@ function App() {
     setLoading(true);
     try {
       const formData = new FormData(event.currentTarget);
-      const { data, errors } = await amplifyClient.queries.askBedrock({
-        ingredients: [formData.get("ingredients")?.toString() || ""],
+      const ingredientsInput =
+        formData.get("ingredients")?.toString().trim() ?? "";
+      const { data, errors } = await amplifyClient.generations.generateRecipe({
+        description: ingredientsInput,
       });
-      if (!errors) {
-        setResult(data?.body || "No data returned");
+      if (!errors && data) {
+        const ingredients = data.ingredients ?? [];
+        const instructions = data.instructions ?? "No instructions provided.";
+        const formattedResult = [
+          data.name,
+          "",
+          "Ingredients:",
+          ...ingredients.map((ingredient) => `• ${ingredient}`),
+          "",
+          "Instructions:",
+          instructions,
+        ].join("\n");
+        setResult(formattedResult);
       } else {
         console.log(errors);
+        setResult("Unable to generate a recipe. Please try again.");
       }
     } catch (e) {
       alert(`An error occurred: ${e}`);
